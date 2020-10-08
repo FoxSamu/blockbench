@@ -678,6 +678,41 @@ class EffectAnimator extends GeneralAnimator {
 	}
 }
 	EffectAnimator.prototype.channels = ['particle', 'sound', 'timeline']
+
+	var EasingFunctions = {
+		// no easing, no acceleration
+		linear: t => t,
+		// accelerating from zero velocity
+		easeInSine: t => 1 - Math.sin((1-t) * Math.PI / 2),
+		// decelerating to zero velocity
+		easeOutSine: t => Math.sin(t * Math.PI / 2),
+		// acceleration until halfway, then deceleration
+		easeInOutSine: t => (1 - Math.cos(t * Math.PI))/2,
+		// accelerating from zero velocity
+		easeInQuad: t => t*t,
+		// decelerating to zero velocity
+		easeOutQuad: t => t*(2-t),
+		// acceleration until halfway, then deceleration
+		easeInOutQuad: t => t<.5 ? 2*t*t : -1+(4-2*t)*t,
+		// accelerating from zero velocity 
+		easeInCubic: t => t*t*t,
+		// decelerating to zero velocity 
+		easeOutCubic: t => (--t)*t*t+1,
+		// acceleration until halfway, then deceleration 
+		easeInOutCubic: t => t<.5 ? 4*t*t*t : (t-1)*(2*t-2)*(2*t-2)+1,
+		// accelerating from zero velocity 
+		easeInQuart: t => t*t*t*t,
+		// decelerating to zero velocity 
+		easeOutQuart: t => 1-(--t)*t*t*t,
+		// acceleration until halfway, then deceleration
+		easeInOutQuart: t => t<.5 ? 8*t*t*t*t : 1-8*(--t)*t*t*t,
+		// accelerating from zero velocity
+		easeInQuint: t => t*t*t*t*t,
+		// decelerating to zero velocity
+		easeOutQuint: t => 1+(--t)*t*t*t*t,
+		// acceleration until halfway, then deceleration 
+		easeInOutQuint: t => t<.5 ? 16*t*t*t*t*t : 1+16*(--t)*t*t*t*t
+	  }
 class Keyframe {
 	constructor(data, uuid) {
 		this.type = 'keyframe'
@@ -695,6 +730,7 @@ class Keyframe {
 		this.script = '';
 		this.instructions = '';
 		this.uuid = (uuid && isUUID(uuid)) ? uuid : guid();
+		this.easing = 'easeInOutSine'
 		if (typeof data === 'object') {
 			Merge.string(this, data, 'channel')
 			this.transform = this.channel === 'rotation' || this.channel === 'position' || this.channel === 'scale';
@@ -819,7 +855,7 @@ class Keyframe {
 			return this.get(axis)
 		} else {
 			let calc = this.calc(axis)
-			return calc + (other.calc(axis) - calc) * amount
+			return calc + (other.calc(axis) - calc) * EasingFunctions[this.easing](amount)
 		}
 	}
 	getArray() {
@@ -984,6 +1020,20 @@ class Keyframe {
 				updateKeyframeSelection()
 			}
 		},*/
+		
+		{name: 'menu.animation.easing', icon: 'loop', children: (function(){
+			let easings = []
+
+			for(let easing in EasingFunctions) {
+				easings.push({
+					name: 'menu.animation.easing.'+easing, 
+					icon: keyframe => (keyframe.easing == easing ? 'radio_button_checked' : 'radio_button_unchecked'), 
+					click(keyframe) {keyframe.easing = easing}
+				})
+			}
+
+			return easings
+		})()},
 		'change_keyframe_file',
 		'_',
 		'copy',
